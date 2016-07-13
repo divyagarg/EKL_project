@@ -1,0 +1,33 @@
+input {  
+   file {
+        path => "/tmp/grocery_order_service/grocery_order_service.log"
+        start_position => "beginning"
+        ignore_older => 0
+        type => "GROCERY_ORDER_SERVICE_LOGS"
+        #sincedb_path => "/Users/divyagarg/.sincedb"
+        sincedb_path => "/dev/null"
+    }
+} 
+
+filter {	
+    grok {
+        match => [ 'message', '%{DATESTAMP:timestamp} %{WORD:severity_level} %{PATH:path} %{WORD:module} %{WORD:method} %{INT:lineno} ] START_CALL= %{UUID:uuid} Request_url = %{URI:api_url}, arguments = %{GREEDYDATA:request_data}' ]
+    }
+ }
+
+output {  
+    file{
+    path => "/Users/divyagarg/info.out"
+    codec => rubydebug
+    } 
+    elasticsearch {
+        action => "index"
+        hosts => ["localhost:9200"]
+        index => "logstash-%{+YYYY.MM.dd}"
+        workers => 1
+        template_overwrite => true
+        codec => json
+    }
+    stdout { codec => rubydebug }
+}
+
